@@ -31,11 +31,20 @@ namespace Robust.Shared.ContentPack
         public bool FileExists(ResPath relPath);
 
         /// <summary>
-        ///     Recursively finds all files in a directory and all sub directories.
+        ///     Finds all files in a directory and all sub directories.
+        ///     Recursive if <param name="recursive"> is true.
         /// </summary>
         /// <param name="path">Directory to search inside of.</param>
         /// <returns>Enumeration of all relative file paths of the files found.</returns>
-        IEnumerable<ResPath> FindFiles(ResPath path);
+        IEnumerable<ResPath> FindFiles(ResPath path, bool recursive = true);
+
+        // FindDirectories would've been a bit more consistent of a name for this but nothing's wrong with it as it is.
+        /// <summary>
+        ///     Recursively finds all directories and sub directories in a directory.
+        /// </summary>
+        /// <param name="path">Directory to search inside of.</param>
+        /// <returns>Enumeration of all relative file paths of the files found.</returns>
+        IEnumerable<ResPath> FindFolders(ResPath path);
 
         /// <summary>
         ///     Recursively returns relative paths to resource files.

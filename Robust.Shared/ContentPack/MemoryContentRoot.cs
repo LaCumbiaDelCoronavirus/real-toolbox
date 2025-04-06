@@ -13,6 +13,8 @@ namespace Robust.Shared.ContentPack;
 public sealed class MemoryContentRoot : IContentRoot, IDisposable
 {
     private readonly Dictionary<ResPath, byte[]> _files = new();
+    // _folders is only paths to added folders, not their contents. Folders still count as files. Also it's intentionally a List, not a HashSet or whatever.
+    private readonly List<ResPath> _folders = new();
 
     private readonly ReaderWriterLockSlim _lock = new();
 
@@ -25,11 +27,15 @@ public sealed class MemoryContentRoot : IContentRoot, IDisposable
     {
         // Just in case, we ensure it's a clean relative path.
         relPath = relPath.Clean().ToRelativePath();
+        var isFolder = relPath.IsDirectory;
 
         _lock.EnterWriteLock();
         try
         {
             _files[relPath] = data;
+
+            if (isFolder)
+                _folders.Add(relPath);
         }
         finally
         {
@@ -47,7 +53,7 @@ public sealed class MemoryContentRoot : IContentRoot, IDisposable
         _lock.EnterWriteLock();
         try
         {
-            return _files.Remove(relPath);
+            return _files.Remove(relPath) && _folders.Remove(relPath);
         }
         finally
         {
@@ -64,6 +70,7 @@ public sealed class MemoryContentRoot : IContentRoot, IDisposable
         try
         {
             _files.Clear();
+            _folders.Clear();
         }
         finally
         {
@@ -107,15 +114,33 @@ public sealed class MemoryContentRoot : IContentRoot, IDisposable
     }
 
     /// <inheritdoc />
-    public IEnumerable<ResPath> FindFiles(ResPath path)
+    public IEnumerable<ResPath> FindFiles(ResPath path, bool recursive = true)
     {
         _lock.EnterReadLock();
         try
         {
             foreach (var (file, _) in _files)
             {
-                if (file.TryRelativeTo(path, out _))
+                if (file.TryRelativeTo(path, out _) && (!recursive || file.IsDirectlyUnder(path)))
                     yield return file;
+            }
+        }
+        finally
+        {
+            _lock.ExitReadLock();
+        }
+    }
+
+    /// <inheritdoc />
+    public IEnumerable<ResPath> FindFolders(ResPath path)
+    {
+        _lock.EnterReadLock();
+        try
+        {
+            foreach (var folder in _folders)
+            {
+                if (folder.TryRelativeTo(path, out _))
+                    yield return folder;
             }
         }
         finally

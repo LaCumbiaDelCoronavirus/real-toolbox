@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -28,17 +29,17 @@ public partial class PrototypeManager
 
     /// <inheritdoc />
     public void LoadDirectory(ResPath path, bool overwrite = false,
-        Dictionary<Type, HashSet<string>>? changed = null)
+        Dictionary<Type, HashSet<string>>? changed = null, bool recursive = true, Log.ISawmill? sawmill = null)
     {
         _hasEverBeenReloaded = true;
-        var streams = Resources.ContentFindFiles(path)
+        var streams = Resources.ContentFindFiles(path, recursive: recursive)
             .Where(filePath => filePath.Extension == "yml" && !filePath.Filename.StartsWith("."))
             .ToArray();
 
         // Shuffle to avoid input data patterns causing uneven thread workloads.
         (new System.Random()).Shuffle(streams.AsSpan());
 
-        var sawmill = _logManager.GetSawmill("eng");
+        sawmill ??= _logManager.GetSawmill("eng");
 
         var results = streams.AsParallel()
             .Select<ResPath, (ResPath, IEnumerable<ExtractedMappingData>)>(file =>
@@ -92,6 +93,41 @@ public partial class PrototypeManager
                     sawmill.Error($"Exception whilst loading prototypes from {file}:\n{e}");
                 }
             }
+        }
+    }
+
+    /// <summary>
+    ///     Loads prototypes from every directory under <paramref name="specifiedHighestPath"/> that match the provided name (<paramref name="dirName"/>, which shouldn't have separators).
+    ///     For example, if dirName is 'Prototypes', will load all folders named 'Prototypes'.
+    ///     If no <paramref name="specifiedHighestPath"/> is provided, will use root path (relative: "/").
+    /// </summary>
+    /// <remarks>
+    ///     Although this method isn't going to be called very frequently, it is rather performance expensive by itself.
+    /// </remarks>
+    public void LoadAllInstancesOfDirectory(string dirName, ResPath? specifiedHighestPath = null, bool overwrite = false,
+        Dictionary<Type, HashSet<string>>? changed = null)
+    {
+        var sawmill = _logManager.GetSawmill("eng");
+
+        var searchOrigin = specifiedHighestPath ?? ResPath.Root;
+
+        // So, the reason ContentFindDirectories is used instead of ContentFindFilesUnderDirectoryName is because we're loading individual directories
+        // with LoadDirectory, which is much more efficient than loading individual files.
+        var directoriesBelowOrigin = Resources.ContentFindDirectories(searchOrigin);
+
+        var searchedPaths = new List<ResPath>();
+
+        Sawmill.Info($"Loading multiple: '{searchOrigin}' from all instances");
+        foreach (var directory in directoriesBelowOrigin.Where(dir => dir.FilenameWithoutExtension == dirName))
+        {
+            // We're loading directories recursively, let's not load the same one again.
+            if (searchedPaths.Any(directory.IsUnder))
+                continue;
+
+            Sawmill.Info($"Loading directory: '{directory}'");
+
+            LoadDirectory(directory.ToRootedPath(), overwrite, changed, true, sawmill);
+            searchedPaths.Add(directory);
         }
     }
 

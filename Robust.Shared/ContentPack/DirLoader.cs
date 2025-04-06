@@ -66,7 +66,7 @@ namespace Robust.Shared.ContentPack
             }
 
             /// <inheritdoc />
-            public IEnumerable<ResPath> FindFiles(ResPath path)
+            public IEnumerable<ResPath> FindFiles(ResPath path, bool recursive = true)
             {
                 var fullPath = GetPath(path);
                 if (!Directory.Exists(fullPath))
@@ -74,13 +74,35 @@ namespace Robust.Shared.ContentPack
                     yield break;
                 }
 
-                var paths = PathHelpers.GetFiles(fullPath);
+                var paths = PathHelpers.GetFiles(fullPath, recursive);
 
                 // GetFiles returns full paths, we want them relative to root
                 foreach (var filePath in paths)
                 {
                     var relPath = filePath.Substring(_directory.FullName.Length);
-                    yield return ResPath.FromRelativeSystemPath(relPath);
+                    var resPath = ResPath.FromRelativeSystemPath(relPath);
+
+                    if (!recursive && !resPath.IsDirectlyUnder(path))
+                        continue;
+
+                    yield return resPath;
+                }
+            }
+
+            /// <inheritdoc />
+            public IEnumerable<ResPath> FindFolders(ResPath path)
+            {
+                var fullPath = GetPath(path);
+
+                if (!Directory.Exists(fullPath))
+                    yield break;
+
+                foreach (var filePath in PathHelpers.GetDirectories(fullPath))
+                {
+                    var relPath = filePath.Substring(_directory.FullName.Length);
+                    var resPath = ResPath.FromRelativeSystemPath(relPath);
+
+                    yield return resPath;
                 }
             }
 

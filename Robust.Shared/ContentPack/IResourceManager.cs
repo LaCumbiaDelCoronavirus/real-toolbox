@@ -86,7 +86,8 @@ namespace Robust.Shared.ContentPack
         bool TryContentFileRead(string path, [NotNullWhen(true)] out Stream? fileStream);
 
         /// <summary>
-        ///     Recursively finds all files in a directory and all sub directories.
+        ///     Finds all files in a directory and all sub directories.
+        ///     Recursive if <paramref name="recursive"/> is true, defaults to true.
         /// </summary>
         /// <remarks>
         ///     If the directory does not exist, an empty enumerable is returned.
@@ -95,7 +96,7 @@ namespace Robust.Shared.ContentPack
         /// <returns>Enumeration of all absolute file paths of the files found.</returns>
         /// <exception cref="ArgumentException">Thrown if <paramref name="path"/> is not rooted.</exception>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="path"/> is null.</exception>
-        IEnumerable<ResPath> ContentFindFiles(ResPath? path);
+        IEnumerable<ResPath> ContentFindFiles(ResPath? path, bool recursive = true);
 
         IEnumerable<ResPath> ContentFindRelativeFiles(ResPath path)
         {
@@ -112,7 +113,8 @@ namespace Robust.Shared.ContentPack
         }
 
         /// <summary>
-        ///     Recursively finds all files in a directory and all sub directories.
+        ///     Finds all files in a directory and all sub directories.
+        ///     Recursive if <paramref name="recursive"/> is true, defaults to true.
         /// </summary>
         /// <remarks>
         ///     If the directory does not exist, an empty enumerable is returned.
@@ -121,7 +123,51 @@ namespace Robust.Shared.ContentPack
         /// <returns>Enumeration of all absolute file paths of the files found.</returns>
         /// <exception cref="ArgumentException">Thrown if <paramref name="path"/> is not rooted.</exception>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="path"/> is null.</exception>
-        IEnumerable<ResPath> ContentFindFiles(string path);
+        IEnumerable<ResPath> ContentFindFiles(string path, bool recursive = true);
+
+        /// <summary>
+        ///     Recursively finds all files under all directories
+        ///     which are named <paramref name="directoryName"/>.
+        /// </summary>
+        /// <remarks>
+        ///     If no such directory exists, an empty enumerable is returned.
+        ///     <param name="searchPath"> defaults to ResPath.Root ("/")
+        /// </remarks>
+        /// <param name="searchPath">Directory to start searching inside of.</param>
+        /// <returns>Enumeration of all absolute paths of the files found.</returns>
+        /// <exception cref="ArgumentException">Thrown if <paramref name="searchPath"/> is not rooted.</exception>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="searchPath"/> is null.</exception>
+        IEnumerable<ResPath> ContentFindFilesUnderDirectoriesWithName(ResPath? searchPath, string directoryName);
+
+        /// <summary>
+        ///     Recursively finds all sub directories in a directory. Recursive.
+        /// </summary>
+        /// <remarks>
+        ///     If the directory does not exist, an empty enumerable is returned.
+        /// </remarks>
+        /// <param name="path">Directory to search inside of.</param>
+        /// <returns>Enumeration of all absolute paths of the directories found.</returns>
+        /// <exception cref="ArgumentException">Thrown if <paramref name="path"/> is not rooted.</exception>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="path"/> is null.</exception>
+        IEnumerable<ResPath> ContentFindDirectories(ResPath? path);
+
+        /// <summary>
+        ///     Returns a rooted path starting with <paramref name="rootPathName"/>, ending with <paramref name="pathToResolve"/>.
+        ///     This method is not that performant; use it judiciously at large scales.
+        /// </summary>
+        bool ResolvePath(string rootPathName, ResPath pathToResolve, [NotNullWhen(true)] out ResPath? resolvedPath, ResPath? searchOrigin = null);
+
+        /// <summary>
+        ///     Returns a rooted path starting with <paramref name="rootPathName"/>, ending with <paramref name="pathToResolve"/>.
+        ///     This method is not that performant; use it judiciously at large scales.
+        /// </summary>
+        bool ResolvePath(string rootPathName, string pathToResolve, [NotNullWhen(true)] out ResPath? resolvedPath, ResPath? searchOrigin = null);
+
+        /// <summary>
+        ///     If provided with a relative path, looks for any path matching it and uses that.
+        ///     Otherwise, returns the same path that was provided.
+        /// </summary>
+        ResPath GetRootedPathFromRelativePath(ResPath path);
 
         /// <summary>
         /// Gets entries in a content directory.

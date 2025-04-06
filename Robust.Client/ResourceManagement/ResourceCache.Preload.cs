@@ -49,7 +49,7 @@ namespace Robust.Client.ResourceManagement
             var sw = Stopwatch.StartNew();
             var resList = GetTypeData<TextureResource>().Resources;
 
-            var texList = _manager.ContentFindFiles("/Textures/")
+            var texList = _manager.ContentFindFilesUnderDirectoriesWithName(ResPath.Root, "Textures")
                 // Skip PNG files inside RSIs.
                 .Where(p => p.Extension == "png" && !p.ToString().Contains(".rsi/") && !resList.ContainsKey(p))
                 .Select(p => new TextureResource.LoadStepData {Path = p})
@@ -121,7 +121,7 @@ namespace Robust.Client.ResourceManagement
             var sw = Stopwatch.StartNew();
             var resList = GetTypeData<RSIResource>().Resources;
 
-            var rsiList = _manager.ContentFindFiles("/Textures/")
+            var rsiList = _manager.ContentFindFilesUnderDirectoriesWithName(ResPath.Root, "Textures")
                 .Where(p => p.ToString().EndsWith(".rsi/meta.json"))
                 .Select(c => c.Directory)
                 .Where(p => !resList.ContainsKey(p))
@@ -133,6 +133,7 @@ namespace Robust.Client.ResourceManagement
                 try
                 {
                     RSIResource.LoadPreTexture(_manager, data);
+                    sawmill.Info($"Loaded RSI: '{data.Path}'");
                 }
                 catch (Exception e)
                 {

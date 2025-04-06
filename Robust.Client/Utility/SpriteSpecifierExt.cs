@@ -2,6 +2,7 @@ using System;
 using Robust.Client.GameObjects;
 using Robust.Client.Graphics;
 using Robust.Client.ResourceManagement;
+using Robust.Shared.ContentPack;
 using Robust.Shared.GameObjects;
 using Robust.Shared.Graphics;
 using Robust.Shared.IoC;
@@ -19,15 +20,20 @@ namespace Robust.Client.Utility
     {
         public static Texture GetTexture(this SpriteSpecifier.Texture texSpecifier, IResourceCache cache)
         {
+            if (!cache.ResolvePath(SpriteSpecifierSerializer.TextureRootName, texSpecifier.TexturePath, out var resolvedPath))
+                throw new ArgumentException($"Failed to get texture from assumed path: '{SpriteSpecifierSerializer.TextureRoot / texSpecifier.TexturePath}'!");
+
             return cache
-                .GetResource<TextureResource>(SpriteSpecifierSerializer.TextureRoot / texSpecifier.TexturePath)
-                .Texture;
+                .GetResource<TextureResource>(resolvedPath.Value.CanonPath).Texture;
         }
 
         [Obsolete("Use SpriteSystem")]
         public static RSI.State GetState(this SpriteSpecifier.Rsi rsiSpecifier, IResourceCache cache)
         {
-            if (!cache.TryGetResource<RSIResource>(SpriteSpecifierSerializer.TextureRoot / rsiSpecifier.RsiPath, out var theRsi))
+            if (!cache.ResolvePath(SpriteSpecifierSerializer.TextureRootName, rsiSpecifier.RsiPath, out var resolvedPath))
+                throw new ArgumentException($"Failed to get RSI from assumed path: '{SpriteSpecifierSerializer.TextureRoot / rsiSpecifier.RsiPath}'!");
+
+            if (!cache.TryGetResource<RSIResource>(resolvedPath.Value, out var theRsi))
             {
                 Logger.Error("SpriteSpecifier failed to load RSI {0}", rsiSpecifier.RsiPath);
                 return SpriteComponent.GetFallbackState(cache);

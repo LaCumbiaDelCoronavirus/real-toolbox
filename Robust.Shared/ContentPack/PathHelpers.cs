@@ -41,9 +41,19 @@ namespace Robust.Shared.ContentPack
         /// </summary>
         /// <param name="path">Directory to start in.</param>
         /// <returns>Enumerable of all file paths in that directory and sub directories.</returns>
-        public static IEnumerable<string> GetFiles(string path)
+        public static IEnumerable<string> GetFiles(string path, bool recursive = true)
         {
-            return Directory.EnumerateFiles(path, "*", SearchOption.AllDirectories);
+            return Directory.EnumerateFiles(path, "*", recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly);
+        }
+
+        /// <summary>
+        ///     Recursively gets directories and sub directories under a directory.
+        /// </summary>
+        /// <param name="path">Directory to start in.</param>
+        /// <returns>Enumerable of all file paths for directories and sub directories in the provided directory.</returns>
+        public static IEnumerable<string> GetDirectories(string path)
+        {
+            return Directory.EnumerateDirectories(path, "*", SearchOption.AllDirectories);
         }
 
         public static bool IsFileInUse(IOException exception)

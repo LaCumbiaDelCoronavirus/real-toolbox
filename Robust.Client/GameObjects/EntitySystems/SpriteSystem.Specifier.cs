@@ -110,9 +110,8 @@ public sealed partial class SpriteSystem
     [Pure]
     public RSI.State GetState(SpriteSpecifier.Rsi rsiSpecifier)
     {
-        if (_resourceCache.TryGetResource<RSIResource>(
-                SpriteSpecifierSerializer.TextureRoot / rsiSpecifier.RsiPath,
-                out var theRsi) &&
+        if (_resourceCache.ResolvePath(SpriteSpecifierSerializer.TextureRootName, rsiSpecifier.RsiPath, out var path) &&
+            _resourceCache.TryGetResource<RSIResource>(path.Value.CanonPath, out var theRsi) &&
             theRsi.RSI.TryGetState(rsiSpecifier.RsiState, out var state))
         {
             return state;

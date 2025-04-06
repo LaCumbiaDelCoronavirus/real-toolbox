@@ -211,9 +211,10 @@ public interface IPrototypeManager
     bool TryGetKindFrom<T>([NotNullWhen(true)] out string? kind) where T : class, IPrototype;
 
     /// <summary>
-    /// Load prototypes from files in a directory, recursively.
+    /// Load prototypes from files in a directory.
+    /// Recursive if <paramref name="recursive"/> is true.
     /// </summary>
-    void LoadDirectory(ResPath path, bool overwrite = false, Dictionary<Type, HashSet<string>>? changed = null);
+    void LoadDirectory(ResPath path, bool overwrite = false, Dictionary<Type, HashSet<string>>? changed = null, bool recursive = true, Log.ISawmill? sawmill = null);
 
     /// <summary>
     /// Validate all prototypes defined in yaml files contained in the given directory.

@@ -47,7 +47,7 @@ namespace Robust.Client.ResourceManagement
                 return _api.TryOpen($"{_prefix}{relPath}", out _);
             }
 
-            public IEnumerable<ResPath> FindFiles(ResPath path)
+            public IEnumerable<ResPath> FindFiles(ResPath path, bool recursive = true)
             {
                 foreach (var relPath in _api.AllFiles)
                 {
@@ -55,10 +55,27 @@ namespace Robust.Client.ResourceManagement
                         continue;
 
                     var resP = new ResPath(relPath[_prefix.Length..]);
-                    if (resP.TryRelativeTo(path, out _))
+                    if (resP.TryRelativeTo(path, out _) && (recursive || resP.IsDirectlyUnder(path)))
                     {
                         yield return resP;
                     }
+                }
+            }
+
+            public IEnumerable<ResPath> FindFolders(ResPath path)
+            {
+                foreach (var relPath in _api.AllFiles)
+                {
+                    if (!relPath.StartsWith(_prefix))
+                        continue;
+
+                    var resPath = new ResPath(relPath[_prefix.Length..]);
+                    if (!resPath.TryRelativeTo(path, out _))
+                        continue;
+
+                    // Uhm.
+                    if (resPath.IsDirectory)
+                        yield return resPath;
                 }
             }
 

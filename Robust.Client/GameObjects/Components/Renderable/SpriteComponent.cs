@@ -296,14 +296,13 @@ namespace Robust.Client.GameObjects
             {
                 if (!string.IsNullOrWhiteSpace(rsi))
                 {
-                    var rsiPath = TextureRoot / rsi;
-                    if(resourceCache.TryGetResource(rsiPath, out RSIResource? resource))
+                    if(resourceCache.ResolvePath(TextureRootName, rsi, out var rsiPath) && resourceCache.TryGetResource(rsiPath.Value.CanonPath, out RSIResource? resource))
                     {
-                        BaseRSI = resource.RSI;
+                        BaseRSI = resource!.RSI;
                     }
                     else
                     {
-                        Logger.ErrorS(LogCategory, "Unable to load RSI '{0}'.", rsiPath);
+                        Logger.ErrorS(LogCategory, "Unable to load RSI of assumed path: '{0}'.", TextureRoot / rsi);
                     }
                 }
             }
@@ -508,7 +507,7 @@ namespace Robust.Client.GameObjects
 
         public int AddLayer(ResPath texturePath, int? newIndex = null)
         {
-            if (!resourceCache.TryGetResource<TextureResource>(TextureRoot / texturePath, out var texture))
+            if (!resourceCache.ResolvePath(TextureRootName, texturePath, out var rsiPath) || !resourceCache.TryGetResource<TextureResource>(rsiPath.Value.CanonPath, out var texture))
             {
                 if (texturePath.Extension == "rsi")
                 {
@@ -519,9 +518,12 @@ namespace Robust.Client.GameObjects
 
                 Logger.ErrorS(LogCategory, "Unable to load texture '{0}'. Trace:\n{1}", texturePath,
                     Environment.StackTrace);
+
+                // ffs
+                return AddLayer(texture: null, newIndex);
             }
 
-            return AddLayer(texture?.Texture, newIndex);
+            return AddLayer(texture.Texture, newIndex);
         }
 
         public int AddLayer(Texture? texture, int? newIndex = null)
@@ -561,14 +563,16 @@ namespace Robust.Client.GameObjects
             return AddLayer(new RSI.StateId(stateId), rsiPath, newIndex);
         }
 
-        public int AddLayer(RSI.StateId stateId, ResPath rsiPath, int? newIndex = null)
+        public int AddLayer(RSI.StateId stateId, ResPath providedRsiPath, int? newIndex = null)
         {
-            if (!resourceCache.TryGetResource<RSIResource>(TextureRoot / rsiPath, out var res))
+            if (!resourceCache.ResolvePath(TextureRootName, providedRsiPath, out var rsiPath) || !resourceCache.TryGetResource<RSIResource>(rsiPath.Value.CanonPath, out var resource))
             {
-                Logger.ErrorS(LogCategory, "Unable to load RSI '{0}'. Trace:\n{1}", rsiPath, Environment.StackTrace);
+                Logger.ErrorS(LogCategory, "Unable to load RSI '{0}'. Trace:\n{1}", providedRsiPath, Environment.StackTrace);
+
+                return 1;
             }
 
-            return AddLayer(stateId, res?.RSI, newIndex);
+            return AddLayer(stateId, resource.RSI, newIndex);
         }
 
         public int AddLayerState(string stateId, ResPath rsiPath, int? newIndex = null)
@@ -693,15 +697,14 @@ namespace Robust.Client.GameObjects
 
             if (!string.IsNullOrWhiteSpace(layerDatum.RsiPath))
             {
-                var path = TextureRoot / layerDatum.RsiPath;
-
-                if (resourceCache.TryGetResource(path, out RSIResource? resource))
+                if (resourceCache.ResolvePath(TextureRootName, layerDatum.RsiPath, out var path) &&
+                 resourceCache.TryGetResource(path.Value.CanonPath, out RSIResource? resource))
                 {
                     layer.RSI = resource.RSI;
                 }
                 else
                 {
-                    Logger.ErrorS(LogCategory, "Unable to load layer RSI '{0}'.", path);
+                    Logger.ErrorS(LogCategory, "Unable to load layer RSI. Assumed path: '{0}'.", TextureRoot / layerDatum.RsiPath);
                 }
             }
 
@@ -742,11 +745,14 @@ namespace Robust.Client.GameObjects
                         "Cannot specify 'texture' on a layer if it has an RSI state specified."
                     );
                 }
-                else
+                else if (resourceCache.ResolvePath(TextureRootName, layerDatum.TexturePath, out var texturePath) &&
+                 resourceCache.TryGetResource<TextureResource>(texturePath.Value.CanonPath, out var texture))
                 {
-                    layer.Texture =
-                        resourceCache.GetResource<TextureResource>(TextureRoot / layerDatum.TexturePath);
+                    layer.Texture = texture;
                 }
+                else
+                    Logger.ErrorS(LogCategory, "Assumed texture path '{0}' does not exist. Trace:\n{1}", TextureRoot / layerDatum.TexturePath,
+                     Environment.StackTrace);
             }
 
             if (layerDatum.Shader != null)
@@ -946,19 +952,21 @@ namespace Robust.Client.GameObjects
             LayerSetTexture(layerKey, new ResPath(texturePath));
         }
 
-        public void LayerSetTexture(int layer, ResPath texturePath)
+        public void LayerSetTexture(int layer, ResPath providedTexturePath)
         {
-            if (!resourceCache.TryGetResource<TextureResource>(TextureRoot / texturePath, out var texture))
+            if (!resourceCache.ResolvePath(TextureRootName, providedTexturePath, out var texturePath) || !resourceCache.TryGetResource<TextureResource>(texturePath.Value.CanonPath, out var texture))
             {
-                if (texturePath.Extension == "rsi")
+                if (providedTexturePath.Extension == "rsi")
                 {
                     Logger.ErrorS(LogCategory,
                         "Expected texture but got rsi '{0}', did you mean 'sprite:' instead of 'texture:'?",
                         texturePath);
                 }
 
-                Logger.ErrorS(LogCategory, "Unable to load texture '{0}'. Trace:\n{1}", texturePath,
+                Logger.ErrorS(LogCategory, "Unable to load texture '{0}'; layer texture will not be set. Trace:\n{1}", texturePath,
                     Environment.StackTrace);
+
+                return;
             }
 
             LayerSetTexture(layer, texture?.Texture);
@@ -1038,14 +1046,16 @@ namespace Robust.Client.GameObjects
             LayerSetState(layerKey, stateId, new ResPath(rsiPath));
         }
 
-        public void LayerSetState(int layer, RSI.StateId stateId, ResPath rsiPath)
+        public void LayerSetState(int layer, RSI.StateId stateId, ResPath providedRsiPath)
         {
-            if (!resourceCache.TryGetResource<RSIResource>(TextureRoot / rsiPath, out var res))
+            if(!resourceCache.ResolvePath(TextureRootName, providedRsiPath, out var rsiPath) || !resourceCache.TryGetResource(rsiPath.Value.CanonPath, out RSIResource? resource))
             {
-                Logger.ErrorS(LogCategory, "Unable to load RSI '{0}'. Trace:\n{1}", rsiPath, Environment.StackTrace);
+                Logger.ErrorS(LogCategory, "Unable to load RSI '{0}'; layer texture will not be set. Trace:\n{1}", rsiPath, Environment.StackTrace);
+
+                return;
             }
 
-            LayerSetState(layer, stateId, res?.RSI);
+            LayerSetState(layer, stateId, resource.RSI);
         }
 
         public void LayerSetState(object layerKey, RSI.StateId stateId, ResPath rsiPath)
@@ -1082,14 +1092,16 @@ namespace Robust.Client.GameObjects
             LayerSetRSI(layerKey, new ResPath(rsiPath));
         }
 
-        public void LayerSetRSI(int layer, ResPath rsiPath)
+        public void LayerSetRSI(int layer, ResPath providedRsiPath)
         {
-            if (!resourceCache.TryGetResource<RSIResource>(TextureRoot / rsiPath, out var res))
+            if(!resourceCache.ResolvePath(TextureRootName, providedRsiPath, out var rsiPath) || !resourceCache.TryGetResource(rsiPath.Value.CanonPath, out RSIResource? resource))
             {
-                Logger.ErrorS(LogCategory, "Unable to load RSI '{0}'. Trace:\n{1}", rsiPath, Environment.StackTrace);
+                Logger.ErrorS(LogCategory, "Unable to load RSI '{0}'; not setting layer RSI. Trace:\n{1}", rsiPath, Environment.StackTrace);
+
+                return;
             }
 
-            LayerSetRSI(layer, res?.RSI);
+            LayerSetRSI(layer, resource.RSI);
         }
 
         public void LayerSetRSI(object layerKey, ResPath rsiPath)

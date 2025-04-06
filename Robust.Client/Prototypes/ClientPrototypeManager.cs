@@ -32,7 +32,8 @@ namespace Robust.Client.Prototypes
         public override void LoadDefaultPrototypes(Dictionary<Type, HashSet<string>>? changed = null)
         {
             LoadDirectory(new("/EnginePrototypes/"), changed: changed);
-            LoadDirectory(_controller.Options.PrototypeDirectory, changed: changed);
+            LoadAllInstancesOfDirectory(_controller.Options.PrototypeDirectory.Filename, changed: changed);
+            //LoadDirectory(_controller.Options.PrototypeDirectory, changed: changed);
             ResolveResults();
         }
 
@@ -56,7 +57,7 @@ namespace Robust.Client.Prototypes
             using var _ = _timing.StartStateApplicationArea();
             ReloadPrototypes([file]);
 
-            Logger.Info($"Reloaded prototypes in {sw.ElapsedMilliseconds} ms");
+            Sawmill.Info($"Reloaded prototypes in {sw.ElapsedMilliseconds} ms");
 #endif
         }
     }

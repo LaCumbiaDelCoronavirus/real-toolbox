@@ -1,4 +1,5 @@
 using System;
+using Robust.Shared.ContentPack;
 using Robust.Shared.GameObjects;
 using Robust.Shared.IoC;
 using Robust.Shared.Serialization.Manager;
@@ -25,9 +26,11 @@ namespace Robust.Shared.Serialization.TypeSerializers.Implementations
         ITypeCopier<Rsi>,
         ITypeCopier<Texture>
     {
+        [Dependency] private readonly IResourceManager _resourceManager = default!;
         // Should probably be in SpriteComponent, but is needed for server to validate paths.
         // So I guess it might as well go here?
         public static readonly ResPath TextureRoot = new("/Textures");
+        public static readonly string TextureRootName = TextureRoot.Filename;
 
         Texture ITypeReader<Texture, ValueDataNode>.Read(ISerializationManager serializationManager,
             ValueDataNode node,
@@ -112,7 +115,12 @@ namespace Robust.Shared.Serialization.TypeSerializers.Implementations
             IDependencyCollection dependencies,
             ISerializationContext? context)
         {
-            return serializationManager.ValidateNode<ResPath>(new ValueDataNode($"{TextureRoot / node.Value}"), context);
+            var resourceManager = dependencies.Resolve<IResourceManager>();
+
+            if (!resourceManager.ResolvePath(TextureRootName, node.Value, out var path))
+                return new ErrorNode(node, "Failed to resolve sprite specifier path");
+
+            return serializationManager.ValidateNode<ResPath>(new ValueDataNode($"{path}"), context);
         }
 
         ValidationNode ITypeValidator<SpriteSpecifier, MappingDataNode>.Validate(

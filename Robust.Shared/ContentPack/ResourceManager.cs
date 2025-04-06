@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using Robust.Shared.Configuration;
@@ -9,6 +10,7 @@ using Robust.Shared.IoC;
 using Robust.Shared.Localization;
 using Robust.Shared.Log;
 using Robust.Shared.Utility;
+using TerraFX.Interop.Windows;
 
 namespace Robust.Shared.ContentPack
 {
@@ -266,9 +268,9 @@ namespace Robust.Shared.ContentPack
         }
 
         /// <inheritdoc />
-        public IEnumerable<ResPath> ContentFindFiles(string path)
+        public IEnumerable<ResPath> ContentFindFiles(string path, bool recursive = true)
         {
-            return ContentFindFiles(new ResPath(path));
+            return ContentFindFiles(new ResPath(path), recursive);
         }
 
         public IEnumerable<string> ContentGetDirectoryEntries(ResPath path)
@@ -315,7 +317,7 @@ namespace Robust.Shared.ContentPack
         }
 
         /// <inheritdoc />
-        public IEnumerable<ResPath> ContentFindFiles(ResPath? path)
+        public IEnumerable<ResPath> ContentFindFiles(ResPath? path, bool recursive = true)
         {
             if (path == null)
             {
@@ -336,7 +338,7 @@ namespace Robust.Shared.ContentPack
                     continue;
                 }
 
-                foreach (var filename in root.FindFiles(relative.Value))
+                foreach (var filename in root.FindFiles(relative.Value, recursive))
                 {
                     var newPath = prefix / filename;
                     if (!alreadyReturnedFiles.Contains(newPath))
@@ -346,6 +348,108 @@ namespace Robust.Shared.ContentPack
                     }
                 }
             }
+        }
+
+        /// <inheritdoc />
+        public IEnumerable<ResPath> ContentFindFilesUnderDirectoriesWithName(ResPath? searchPath, string directoryName)
+        {
+            searchPath ??= ResPath.Root;
+
+            var matchingDirectories = ContentFindDirectories(searchPath).Where(dir => dir.Filename == directoryName);
+            var foundFiles = new List<ResPath>();
+
+            var searchedPaths = new List<ResPath>();
+
+            foreach (var directory in matchingDirectories)
+            {
+                //if (searchedPaths.Any(directory.IsUnder))
+                //{
+                //    Sawmill.Info($"Skipping file directory: '{directory.CanonPath}'");
+                //    continue;
+                //}
+
+                Sawmill.Info($"Finding files under directory: '{directory.CanonPath}'");
+
+                // very important that this is unrecursive!!!
+                foundFiles.AddRange(ContentFindFiles(directory.ToRootedPath(), true));
+                searchedPaths.Add(directory);
+            }
+
+            return foundFiles;
+        }
+
+        /// <inheritdoc />
+        public IEnumerable<ResPath> ContentFindDirectories(ResPath? path)
+        {
+            if (path == null)
+                throw new ArgumentNullException(nameof(path));
+
+            if (!path.Value.IsRooted)
+                throw new ArgumentException("Path is not rooted", nameof(path));
+
+            var foundFolders = new HashSet<ResPath>();
+
+            foreach (var (prefix, root) in _contentRoots)
+            {
+                //if (path.Value.CanonPath != prefix.CanonPath && !path.Value.TryRelativeTo(prefix, out var relative))
+                //    continue;
+
+                foreach (var directory in root.FindFolders(path.Value))
+                {
+                    if (foundFolders.Contains(directory))
+                        continue;
+
+                    foundFolders.Add(directory);
+
+                    yield return directory;
+                }
+            }
+        }
+
+        /// <inheritdoc />
+        public bool ResolvePath(string rootPathName, ResPath pathToResolve, [NotNullWhen(true)] out ResPath? resolvedPath, ResPath? searchOrigin = null)
+        {
+            searchOrigin ??= ResPath.Root;
+
+            foreach (var (prefix, root) in _contentRoots)
+            {
+                foreach (var directory in root.FindFolders(searchOrigin.Value).Where(dir => dir.Filename == rootPathName))
+                {
+                    // see if the path we're trying to resolve is valid
+                    var attemptedPath = directory.ToRootedPath() / pathToResolve;
+
+                    if (!attemptedPath.CanonPath.EndsWith(pathToResolve.CanonPath))
+                    {
+                        var errorDescriptor = pathToResolve.IsRooted ? "Did you intend to make it rooted?" : "Did you intend to make it relative?";
+                        Sawmill.Error($"Failed to resolve path: '{attemptedPath}', with path to resolve: '{pathToResolve}'. {errorDescriptor}");
+                        continue;
+                    }
+
+                    resolvedPath = attemptedPath;
+                    return true;
+                }
+            }
+
+            resolvedPath = null;
+            return false;
+        }
+
+        /// <inheritdoc />
+        public bool ResolvePath(string rootPathName, string pathToResolve, [NotNullWhen(true)] out ResPath? resolvedPath, ResPath? searchOrigin = null)
+        {
+            return ResolvePath(rootPathName, new ResPath(pathToResolve), out resolvedPath, searchOrigin);
+        }
+
+        /// <inheritdoc />
+        public ResPath GetRootedPathFromRelativePath(ResPath path)
+        {
+            if (path.IsRooted)
+                return path;
+
+            if (!TryGetDiskFilePath(path, out var diskPath))
+                throw new ArgumentException($"Path '{path}' does not exist.");
+
+            return new ResPath(diskPath);
         }
 
         public bool TryGetDiskFilePath(ResPath path, [NotNullWhen(true)] out string? diskPath)

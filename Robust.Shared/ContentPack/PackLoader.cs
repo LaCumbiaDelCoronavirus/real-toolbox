@@ -85,7 +85,7 @@ namespace Robust.Shared.ContentPack
             }
 
             /// <inheritdoc />
-            public IEnumerable<ResPath> FindFiles(ResPath path)
+            public IEnumerable<ResPath> FindFiles(ResPath path, bool recursive = true)
             {
                 var rootPath = path + "/";
                 foreach (var entry in _zip.Entries)
@@ -98,8 +98,24 @@ namespace Robust.Shared.ContentPack
 
                     if (entry.FullName.StartsWith(rootPath))
                     {
-                        yield return new ResPath(entry.FullName).ToRelativePath();
+                        var resPath = new ResPath(entry.FullName).ToRelativePath();
+                        if (!recursive && resPath.IsDirectlyUnder(path))
+                            continue;
+
+                        yield return resPath;
                     }
+                }
+            }
+
+            /// <inheritdoc />
+            public IEnumerable<ResPath> FindFolders(ResPath path)
+            {
+                var rootPath = path + "/";
+                foreach (var entry in _zip.Entries)
+                {
+                    // It's a directory.
+                    if (entry.Name == "")
+                        yield return new ResPath(entry.FullName).ToRelativePath();
                 }
             }
 

@@ -149,10 +149,10 @@ public readonly struct ResPath : IEquatable<ResPath>
     /// <summary>
     ///     Returns the file name part of a <see cref="ResPath"/>, as string.
     ///     In essence reverse of <see cref="Extension"/>.
-    ///     If last segment divided of a path (e.g. <c>/foo/bar/baz.png</c>) divided by separator (e.g <c>/</c>)
-    ///     is considered a filename (e.g. <c>baz.png</c>). In that segment part before period is
-    ///     considered filename (e.g. <c>baz</c>, unless file start with period, then whole segment
-    ///     is filename without extension.
+    ///     The last divided segment of a path (e.g. <c>/foo/bar/baz.png</c>) divided by the separator (e.g <c>/</c>)
+    ///     is considered a filename (e.g. <c>baz.png</c>). The segment part before the period is
+    ///     considered the filename (e.g. <c>baz</c>, unless the file starts with a period, in which case
+    ///     the whole last segment is the filename without an extension.
     /// </summary>
     /// <example>
     /// <code>
@@ -180,8 +180,8 @@ public readonly struct ResPath : IEquatable<ResPath>
     /// <summary>
     ///     Returns the file name (folders are files) for given path,
     ///     or "." if path is empty.
-    ///     If last segment divided of a path (e.g. <c>/foo/bar/baz.png</c>) divided by separator (e.g <c>/</c>)
-    ///     is considered a filename (e.g. <c>baz.png</c>).
+    ///     If the last divided segment of a path (e.g. <c>/foo/bar/baz.png</c>) is divided by a separator (e.g <c>/</c>),
+    ///     it is considered a filename (e.g. <c>baz.png</c>).
     /// </summary>
     /// <example>
     /// <code>
@@ -378,6 +378,44 @@ public readonly struct ResPath : IEquatable<ResPath>
     /// <seealso cref="ToRelativePath"/>
     public bool IsRelative => !IsRooted;
 
+    /// <summary>
+    ///     Returns true if the path is a folder/directory.
+    /// </summary>
+    public bool IsDirectory => System.IO.Directory.Exists(ToRelativeSystemPath());
+
+    /// <summary>
+    ///     Returns true if the path is directly under the provided directory,
+    ///     i.e. true if the path is in the directory but not if it's in any of the subdirectories.
+    /// </summary>
+    // That conversion to a relative path may not be necessary, but i'm not sure...
+    public bool IsDirectlyUnder(ResPath topPath) => Directory == topPath.ToRelativePath();
+
+    /// <summary>
+    ///     Returns true if the path is anywhere under the provided directory,
+    ///     i.e. true if the path is in the directory or any of it's subdirectories.
+    /// </summary>
+    /// <remarks>
+    ///     Returns false if the provided path is the ResPath that this was called on.
+    /// </remarks>
+    public bool IsUnder(ResPath possibleAncestorDirectory)
+    {
+        if (Directory == possibleAncestorDirectory)
+            return true;
+
+        if (this == possibleAncestorDirectory)
+            return false;
+
+        var rootedThis = this.ToRootedPath();
+        var rootedAncestorDirectory = possibleAncestorDirectory.ToRootedPath();
+
+        if (!rootedThis.TryRelativeTo(rootedAncestorDirectory, out _))
+            return false;
+
+        // Both paths are rooted to 'normalise' them.
+        var under = rootedThis.CanonPath.StartsWith(rootedAncestorDirectory.CanonPath);
+
+        return under;
+    }
 
     /// <summary>
     ///     Returns the path of how this instance is "relative" to <paramref name="basePath" />,

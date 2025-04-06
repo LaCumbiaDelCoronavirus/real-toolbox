@@ -54,7 +54,8 @@ namespace Robust.Client
         public ResPath AssemblyDirectory { get; init; } = new(@"/Assemblies/");
 
         /// <summary>
-        ///     Directory to load all prototypes from.
+        ///     Path of directory to load all prototypes from.
+        ///     All directories that share this path's name will also be used to load prototypes.
         /// </summary>
         public ResPath PrototypeDirectory { get; init; } = new(@"/Prototypes/");
 

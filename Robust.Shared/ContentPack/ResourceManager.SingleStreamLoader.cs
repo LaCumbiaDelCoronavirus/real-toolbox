@@ -43,9 +43,18 @@ namespace Robust.Shared.ContentPack
             public bool FileExists(ResPath relPath)
                 => relPath == _resourcePath;
 
-            public IEnumerable<ResPath> FindFiles(ResPath path)
+            public IEnumerable<ResPath> FindFiles(ResPath path, bool recursive = true)
             {
-                if (_resourcePath.TryRelativeTo(path, out var relative))
+                // second expression in parenthesis checks if the path provided is the
+                if (_resourcePath.TryRelativeTo(path, out var relative) && (recursive || relative.Value.IsDirectlyUnder(path)))
+                {
+                    yield return _resourcePath;
+                }
+            }
+
+            public IEnumerable<ResPath> FindFolders(ResPath path)
+            {
+                if (_resourcePath.TryRelativeTo(path, out var relative) && path.IsDirectory)
                 {
                     yield return _resourcePath;
                 }
