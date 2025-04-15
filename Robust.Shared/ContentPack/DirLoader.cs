@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -54,8 +55,8 @@ namespace Robust.Shared.ContentPack
 
             public bool FileExists(ResPath relPath)
             {
-                var path = GetPath(relPath);
-                return File.Exists(path);
+                var fullPath = GetPath(relPath);
+                return File.Exists(fullPath) || Directory.Exists(fullPath);
             }
 
             internal string GetPath(ResPath relPath)
@@ -90,20 +91,30 @@ namespace Robust.Shared.ContentPack
             }
 
             /// <inheritdoc />
-            public IEnumerable<ResPath> FindFolders(ResPath path)
+            public IEnumerable<ResPath> FindDirectories(ResPath path, Func<ResPath, bool>? predicate = null)
             {
                 var fullPath = GetPath(path);
 
                 if (!Directory.Exists(fullPath))
                     yield break;
 
-                foreach (var filePath in PathHelpers.GetDirectories(fullPath))
+                // It's like a gazillion directories but this does make it less awfully slow
+                var directories = new ConcurrentBag<ResPath>();
+
+                // i'm 92.1% sure it's fine to do it like this (Parallel.X) even if it doesn't make much more of a positive effect
+                Parallel.ForEach(PathHelpers.GetDirectories(fullPath), filePath =>
                 {
                     var relPath = filePath.Substring(_directory.FullName.Length);
                     var resPath = ResPath.FromRelativeSystemPath(relPath);
 
-                    yield return resPath;
-                }
+                    if (predicate != null && !predicate(resPath))
+                        return;
+
+                    directories.Add(resPath);
+                });
+
+                foreach (var dir in directories)
+                    yield return dir;
             }
 
             public IEnumerable<string> GetEntries(ResPath path)

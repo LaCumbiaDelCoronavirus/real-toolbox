@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using Robust.LoaderApi;
@@ -62,7 +63,7 @@ namespace Robust.Client.ResourceManagement
                 }
             }
 
-            public IEnumerable<ResPath> FindFolders(ResPath path)
+            public IEnumerable<ResPath> FindDirectories(ResPath path, Func<ResPath, bool>? predicate = null)
             {
                 foreach (var relPath in _api.AllFiles)
                 {
@@ -70,12 +71,17 @@ namespace Robust.Client.ResourceManagement
                         continue;
 
                     var resPath = new ResPath(relPath[_prefix.Length..]);
+                    if (!resPath.IsDirectory)
+                        continue;
+
+                    if (predicate != null && !predicate(resPath))
+                        continue;
+
                     if (!resPath.TryRelativeTo(path, out _))
                         continue;
 
                     // Uhm.
-                    if (resPath.IsDirectory)
-                        yield return resPath;
+                    yield return resPath;
                 }
             }
 

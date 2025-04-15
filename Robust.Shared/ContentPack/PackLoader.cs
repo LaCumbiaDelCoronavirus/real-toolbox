@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.IO.Compression;
@@ -108,14 +109,20 @@ namespace Robust.Shared.ContentPack
             }
 
             /// <inheritdoc />
-            public IEnumerable<ResPath> FindFolders(ResPath path)
+            public IEnumerable<ResPath> FindDirectories(ResPath path, Func<ResPath, bool>? predicate = null)
             {
                 var rootPath = path + "/";
                 foreach (var entry in _zip.Entries)
                 {
-                    // It's a directory.
-                    if (entry.Name == "")
-                        yield return new ResPath(entry.FullName).ToRelativePath();
+                    // if its not a directory then go away
+                    if (entry.Name != "")
+                        continue;
+
+                    var resPath = new ResPath(entry.FullName).ToRelativePath();
+                    if (predicate != null && !predicate(resPath))
+                        continue;
+
+                    yield return resPath;
                 }
             }
 

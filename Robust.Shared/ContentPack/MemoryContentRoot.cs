@@ -12,9 +12,10 @@ namespace Robust.Shared.ContentPack;
 /// </summary>
 public sealed class MemoryContentRoot : IContentRoot, IDisposable
 {
+    // _files includes directories.
     private readonly Dictionary<ResPath, byte[]> _files = new();
-    // _folders is only paths to added folders, not their contents. Folders still count as files. Also it's intentionally a List, not a HashSet or whatever.
-    private readonly List<ResPath> _folders = new();
+    // _directories is only paths to added folders, not their contents.
+    private readonly HashSet<ResPath> _directories = new();
 
     private readonly ReaderWriterLockSlim _lock = new();
 
@@ -35,7 +36,7 @@ public sealed class MemoryContentRoot : IContentRoot, IDisposable
             _files[relPath] = data;
 
             if (isFolder)
-                _folders.Add(relPath);
+                _directories.Add(relPath);
         }
         finally
         {
@@ -53,7 +54,7 @@ public sealed class MemoryContentRoot : IContentRoot, IDisposable
         _lock.EnterWriteLock();
         try
         {
-            return _files.Remove(relPath) && _folders.Remove(relPath);
+            return _files.Remove(relPath) && _directories.Remove(relPath);
         }
         finally
         {
@@ -70,7 +71,7 @@ public sealed class MemoryContentRoot : IContentRoot, IDisposable
         try
         {
             _files.Clear();
-            _folders.Clear();
+            _directories.Clear();
         }
         finally
         {
@@ -132,15 +133,18 @@ public sealed class MemoryContentRoot : IContentRoot, IDisposable
     }
 
     /// <inheritdoc />
-    public IEnumerable<ResPath> FindFolders(ResPath path)
+    public IEnumerable<ResPath> FindDirectories(ResPath path, Func<ResPath, bool>? predicate = null)
     {
         _lock.EnterReadLock();
         try
         {
-            foreach (var folder in _folders)
+            foreach (var directory in _directories)
             {
-                if (folder.TryRelativeTo(path, out _))
-                    yield return folder;
+                if (predicate != null && !predicate(directory))
+                    continue;
+
+                if (directory.TryRelativeTo(path, out _))
+                    yield return directory;
             }
         }
         finally

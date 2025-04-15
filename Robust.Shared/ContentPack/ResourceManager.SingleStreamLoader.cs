@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
@@ -45,19 +46,25 @@ namespace Robust.Shared.ContentPack
 
             public IEnumerable<ResPath> FindFiles(ResPath path, bool recursive = true)
             {
-                // second expression in parenthesis checks if the path provided is the
                 if (_resourcePath.TryRelativeTo(path, out var relative) && (recursive || relative.Value.IsDirectlyUnder(path)))
                 {
                     yield return _resourcePath;
                 }
             }
 
-            public IEnumerable<ResPath> FindFolders(ResPath path)
+            public IEnumerable<ResPath> FindDirectories(ResPath path, Func<ResPath, bool>? predicate = null)
             {
-                if (_resourcePath.TryRelativeTo(path, out var relative) && path.IsDirectory)
-                {
-                    yield return _resourcePath;
-                }
+                if (!path.IsDirectory)
+                    yield break;
+
+                // performance impact of trying relative path before the probably-cheaper predicate is minimal..
+                if (!_resourcePath.TryRelativeTo(path, out var relative))
+                    yield break;
+
+                if (predicate != null && !predicate(_resourcePath))
+                    yield break;
+
+                yield return _resourcePath;
             }
 
             public IEnumerable<string> GetRelativeFilePaths()

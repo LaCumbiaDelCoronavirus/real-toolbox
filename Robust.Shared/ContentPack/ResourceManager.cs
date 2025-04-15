@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
+using System.Threading.Tasks;
 using Robust.Shared.Configuration;
 using Robust.Shared.IoC;
 using Robust.Shared.Localization;
@@ -36,6 +37,13 @@ namespace Robust.Shared.ContentPack
         // Literally not characters that can't go into filenames on Windows.
         private static readonly Regex BadPathCharacterRegex =
             new("[<>:\"|?*\0\\x01-\\x1f]", RegexOptions.IgnoreCase);
+
+
+        // Key is the path trying to be resolved, value is the resolved path
+        private Dictionary<ResPath, ResPath> _cachedResolvedPaths = new();
+
+        // Paths that couldnt be resolved, so we won't try to resolve them again.
+        private HashSet<ResPath> _unresolvablePaths = new();
 
         protected ISawmill Sawmill = default!;
 
@@ -362,15 +370,8 @@ namespace Robust.Shared.ContentPack
 
             foreach (var directory in matchingDirectories)
             {
-                //if (searchedPaths.Any(directory.IsUnder))
-                //{
-                //    Sawmill.Info($"Skipping file directory: '{directory.CanonPath}'");
-                //    continue;
-                //}
-
                 Sawmill.Info($"Finding files under directory: '{directory.CanonPath}'");
 
-                // very important that this is unrecursive!!!
                 foundFiles.AddRange(ContentFindFiles(directory.ToRootedPath(), true));
                 searchedPaths.Add(directory);
             }
@@ -394,7 +395,7 @@ namespace Robust.Shared.ContentPack
                 //if (path.Value.CanonPath != prefix.CanonPath && !path.Value.TryRelativeTo(prefix, out var relative))
                 //    continue;
 
-                foreach (var directory in root.FindFolders(path.Value))
+                foreach (var directory in root.FindDirectories(path.Value))
                 {
                     if (foundFolders.Contains(directory))
                         continue;
@@ -409,27 +410,49 @@ namespace Robust.Shared.ContentPack
         /// <inheritdoc />
         public bool ResolvePath(string rootPathName, ResPath pathToResolve, [NotNullWhen(true)] out ResPath? resolvedPath, ResPath? searchOrigin = null)
         {
+            if (_cachedResolvedPaths.TryGetValue(pathToResolve, out var cachedResolvedPath))
+            {
+                //Sawmill.Info($"Retrieved cached path for '{pathToResolve}'");
+                resolvedPath = cachedResolvedPath;
+                return true;
+            }
+
+            if (_unresolvablePaths.Contains(pathToResolve))
+            {
+                Sawmill.Warning($"Skipped '{pathToResolve}', as it is cached as unresolvable");
+                resolvedPath = null;
+                return false;
+            }
+
             searchOrigin ??= ResPath.Root;
+            //var attemptedPathsForResolution = new HashSet<ResPath>();
 
             foreach (var (prefix, root) in _contentRoots)
             {
-                foreach (var directory in root.FindFolders(searchOrigin.Value).Where(dir => dir.Filename == rootPathName))
+                foreach (var directory in root.FindDirectories(searchOrigin.Value, dir => dir.Filename == rootPathName))
                 {
+                    //if (attemptedPathsForResolution.Contains(directory))
+                    //    continue;
+
+                    //attemptedPathsForResolution.Add(directory);
+
+
                     // see if the path we're trying to resolve is valid
                     var attemptedPath = directory.ToRootedPath() / pathToResolve;
 
-                    if (!attemptedPath.CanonPath.EndsWith(pathToResolve.CanonPath))
-                    {
-                        var errorDescriptor = pathToResolve.IsRooted ? "Did you intend to make it rooted?" : "Did you intend to make it relative?";
-                        Sawmill.Error($"Failed to resolve path: '{attemptedPath}', with path to resolve: '{pathToResolve}'. {errorDescriptor}");
+                    if (!root.FileExists(attemptedPath))
                         continue;
-                    }
+
+                    _cachedResolvedPaths[pathToResolve] = attemptedPath;
 
                     resolvedPath = attemptedPath;
                     return true;
-                }
+                };
             }
 
+            _unresolvablePaths.Add(pathToResolve);
+
+            Sawmill.Error($"Failed to resolve any possible path for '{pathToResolve}'!");
             resolvedPath = null;
             return false;
         }

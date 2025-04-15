@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
@@ -26,7 +27,7 @@ namespace Robust.Shared.ContentPack
         bool TryGetFile(ResPath relPath, [NotNullWhen(true)] out Stream? stream);
 
         /// <summary>
-        ///     Returns true if the given file exists.
+        ///     Returns true if the given file (or directory) exists.
         /// </summary>
         public bool FileExists(ResPath relPath);
 
@@ -43,8 +44,9 @@ namespace Robust.Shared.ContentPack
         ///     Recursively finds all directories and sub directories in a directory.
         /// </summary>
         /// <param name="path">Directory to search inside of.</param>
+        /// <param name="predicate">Function run on each path found, and discards it if it returns false.</param>
         /// <returns>Enumeration of all relative file paths of the files found.</returns>
-        IEnumerable<ResPath> FindFolders(ResPath path);
+        IEnumerable<ResPath> FindDirectories(ResPath path, Func<ResPath, bool>? predicate = null);
 
         /// <summary>
         ///     Recursively returns relative paths to resource files.
