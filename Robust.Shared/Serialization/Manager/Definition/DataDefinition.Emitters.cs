@@ -19,7 +19,7 @@ namespace Robust.Shared.Serialization.Manager.Definition
     {
         private PopulateDelegateSignature EmitPopulateDelegate(SerializationManager manager)
         {
-            var isServer = manager.DependencyCollection.Resolve<INetManager>().IsServer;
+            var netSide = manager.DependencyCollection.Resolve<INetManager>().NetSide;
 
             var managerConst = Expression.Constant(manager);
 
@@ -34,10 +34,9 @@ namespace Robust.Shared.Serialization.Manager.Definition
             {
                 var fieldDefinition = BaseFieldDefinitions[i];
 
-                if (fieldDefinition.Attribute.ServerOnly && !isServer)
-                {
+                // If this attribute isn't on our side (i.e., the attribute is Client and our side is Server), then skip it.
+                if ((fieldDefinition.Attribute.NetworkSide & netSide) == 0x0)
                     continue;
-                }
 
                 var isNullable = NullableHelper.IsMarkedAsNullable(fieldDefinition.FieldInfo);
 
@@ -168,7 +167,7 @@ namespace Robust.Shared.Serialization.Manager.Definition
         private SerializeDelegateSignature EmitSerializeDelegate(SerializationManager manager)
         {
             var managerConst = Expression.Constant(manager);
-            var isServer = manager.DependencyCollection.Resolve<INetManager>().IsServer;
+            var netSide = manager.DependencyCollection.Resolve<INetManager>().NetSide;
 
             var objParam = Expression.Parameter(typeof(T));
             var contextParam = Expression.Parameter(typeof(ISerializationContext));
@@ -192,10 +191,8 @@ namespace Robust.Shared.Serialization.Manager.Definition
                     continue;
                 }
 
-                if (fieldDefinition.Attribute.ServerOnly && !isServer)
-                {
+                if ((fieldDefinition.Attribute.NetworkSide & netSide) == 0x0)
                     continue;
-                }
 
                 var isNullable = NullableHelper.IsMarkedAsNullable(fieldDefinition.FieldInfo);
 
@@ -313,7 +310,7 @@ namespace Robust.Shared.Serialization.Manager.Definition
         private CopyDelegateSignature EmitCopyDelegate(SerializationManager manager)
         {
             var managerConst = Expression.Constant(manager);
-            var isServer = manager.DependencyCollection.Resolve<INetManager>().IsServer;
+            var netSide = manager.DependencyCollection.Resolve<INetManager>().NetSide;
 
             var sourceParam = Expression.Parameter(typeof(T));
             var targetParam = Expression.Parameter(typeof(T).MakeByRefType());
@@ -326,10 +323,8 @@ namespace Robust.Shared.Serialization.Manager.Definition
             {
                 var fieldDefinition = BaseFieldDefinitions[i];
 
-                if (fieldDefinition.Attribute.ServerOnly && !isServer)
-                {
+                if ((fieldDefinition.Attribute.NetworkSide & netSide) == 0x0)
                     continue;
-                }
 
                 var isNullable = NullableHelper.IsMarkedAsNullable(fieldDefinition.FieldInfo);
 

@@ -153,6 +153,8 @@ namespace Robust.Shared.Network
         /// <inheritdoc />
         public bool IsClient => !IsServer;
 
+        public NetworkSide NetSide => IsServer ? NetworkSide.Server : NetworkSide.Client;
+
         /// <inheritdoc />
         public bool IsConnected
         {

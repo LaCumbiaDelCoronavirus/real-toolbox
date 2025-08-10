@@ -1,5 +1,6 @@
 ﻿using System;
 using JetBrains.Annotations;
+using Robust.Shared.Network;
 
 namespace Robust.Shared.Serialization.Manager.Attributes;
 
@@ -19,8 +20,8 @@ namespace Robust.Shared.Serialization.Manager.Attributes;
 [MeansImplicitUse(ImplicitUseKindFlags.Assign)]
 public sealed class IncludeDataFieldAttribute : DataFieldBaseAttribute
 {
-    public IncludeDataFieldAttribute(bool readOnly = false, int priority = 1, bool serverOnly = false,
-        Type? customTypeSerializer = null) : base(readOnly, priority, serverOnly, customTypeSerializer)
+    public IncludeDataFieldAttribute(bool readOnly = false, int priority = 1, NetworkSide networkSide = NetworkSide.Shared,
+        Type? customTypeSerializer = null) : base(readOnly, priority, networkSide, customTypeSerializer)
     {
     }
 

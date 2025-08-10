@@ -1,6 +1,7 @@
 using System;
 #if !ROBUST_ANALYZERS_TEST
 using JetBrains.Annotations;
+using Robust.Shared.Network;
 #endif
 
 namespace Robust.Shared.Serialization.Manager.Attributes
@@ -26,7 +27,7 @@ namespace Robust.Shared.Serialization.Manager.Attributes
         /// </summary>
         public readonly bool Required;
 
-        public DataFieldAttribute(string? tag = null, bool readOnly = false, int priority = 1, bool required = false, bool serverOnly = false, Type? customTypeSerializer = null) : base(readOnly, priority, serverOnly, customTypeSerializer)
+        public DataFieldAttribute(string? tag = null, bool readOnly = false, int priority = 1, bool required = false, NetworkSide networkSide = NetworkSide.Shared, Type? customTypeSerializer = null) : base(readOnly, priority, networkSide, customTypeSerializer)
         {
             Tag = tag;
             Required = required;
@@ -43,15 +44,20 @@ namespace Robust.Shared.Serialization.Manager.Attributes
         public readonly int Priority;
         public readonly Type? CustomTypeSerializer;
         public readonly bool ReadOnly;
-        public readonly bool ServerOnly;
 
-        protected DataFieldBaseAttribute(bool readOnly = false, int priority = 1, bool serverOnly = false, Type? customTypeSerializer = null)
+        /// <summary>
+        ///     Specifies whether this datafield should only be replicated to
+        ///     server, client, or both (shared).
+        /// </summary>
+        /// <seealso cref="NetworkSide"/>
+        public readonly NetworkSide NetworkSide;
+
+        protected DataFieldBaseAttribute(bool readOnly = false, int priority = 1, NetworkSide networkSide = NetworkSide.Shared, Type? customTypeSerializer = null)
         {
             ReadOnly = readOnly;
             Priority = priority;
-            ServerOnly = serverOnly;
             CustomTypeSerializer = customTypeSerializer;
+            NetworkSide = networkSide;
         }
     }
-
 }

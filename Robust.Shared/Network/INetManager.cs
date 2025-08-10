@@ -20,6 +20,15 @@ namespace Robust.Shared.Network
         bool IsClient { get; }
 
         /// <summary>
+        ///     Whether this is a client or a server,
+        ///     but as a <see cref="NetworkSide"/>.
+        ///
+        ///     Can only be <see cref="NetworkSide.Client"/>
+        ///     or <see cref="NetworkSide.Server"/>.
+        /// </summary>
+        NetworkSide NetSide { get; }
+
+        /// <summary>
         ///     Has networking been started?
         /// </summary>
         bool IsRunning { get; }

@@ -28,6 +28,7 @@ namespace Robust.UnitTesting
 
             public bool IsServer { get; private set; }
             public bool IsClient => !IsServer;
+            public NetworkSide NetSide => IsServer ? NetworkSide.Server : NetworkSide.Client;
             public bool IsRunning { get; private set; }
             public bool IsConnected => ChannelCount != 0;
             public NetworkStats Statistics => default;

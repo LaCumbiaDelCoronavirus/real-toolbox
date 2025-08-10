@@ -36,7 +36,7 @@ namespace Robust.Shared.Prototypes
     {
         public const string Name = "id";
         public IdDataFieldAttribute(int priority = 1, Type? customTypeSerializer = null) :
-            base(Name, false, priority, true, false, customTypeSerializer)
+            base(Name, false, priority, true, Network.NetworkSide.Shared, customTypeSerializer)
         {
         }
     }
@@ -45,7 +45,7 @@ namespace Robust.Shared.Prototypes
     {
         public const string Name = "parent";
         public ParentDataFieldAttribute(Type prototypeIdSerializer, int priority = 1) :
-            base(Name, false, priority, false, false, prototypeIdSerializer)
+            base(Name, false, priority, false, Network.NetworkSide.Shared, prototypeIdSerializer)
         {
         }
     }
@@ -54,7 +54,7 @@ namespace Robust.Shared.Prototypes
     {
         public const string Name = "abstract";
         public AbstractDataFieldAttribute(int priority = 1) :
-            base(Name, false, priority, false, false, null)
+            base(Name, false, priority, false, Network.NetworkSide.Shared, null)
         {
         }
     }
