@@ -378,6 +378,7 @@ public class Generator : IIncrementalGenerator
     }
 
     // TODO serveronly? do we care? who knows!!
+    // I care.
     private static StringBuilder CopyDataFields(DataDefinition definition)
     {
         var builder = new StringBuilder();
