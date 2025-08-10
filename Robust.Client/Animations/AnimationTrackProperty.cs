@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Numerics;
+using JetBrains.Annotations;
 using Robust.Shared.Animations;
 using Robust.Shared.Maths;
 
@@ -9,7 +10,8 @@ namespace Robust.Client.Animations
     /// <summary>
     ///     Animation that changes the value of a property based on keyframes.
     /// </summary>
-    public abstract class AnimationTrackProperty : AnimationTrack
+    [UsedImplicitly]
+    public abstract partial class AnimationTrackProperty : AnimationTrack
     {
         public List<KeyFrame> KeyFrames { get; set; } = new();
 

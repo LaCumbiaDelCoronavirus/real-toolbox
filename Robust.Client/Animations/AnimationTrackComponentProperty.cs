@@ -8,7 +8,7 @@ using Robust.Shared.Log;
 namespace Robust.Client.Animations
 {
     [UsedImplicitly]
-    public sealed class AnimationTrackComponentProperty : AnimationTrackProperty
+    public sealed partial class AnimationTrackComponentProperty : AnimationTrackProperty
     {
         public Type? ComponentType { get; set; }
         public string? Property { get; set; }

@@ -1,4 +1,5 @@
 using System;
+using Robust.Shared.Animations;
 
 namespace Robust.Client.Animations
 {

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Robust.Client.Animations;
+using Robust.Shared.Animations;
 using Robust.Shared.Collections;
 using Robust.Shared.Timing;
 using static Robust.Client.Animations.AnimationPlaybackShared;

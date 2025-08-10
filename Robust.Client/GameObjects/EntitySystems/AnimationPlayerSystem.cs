@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Robust.Client.Animations;
+using Robust.Shared.Animations;
 using Robust.Shared.GameObjects;
 using Robust.Shared.IoC;
 using Robust.Shared.Utility;

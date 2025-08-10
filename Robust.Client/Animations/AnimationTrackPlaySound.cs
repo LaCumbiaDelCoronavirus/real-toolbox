@@ -1,7 +1,8 @@
 using System;
 using System.Collections.Generic;
+using JetBrains.Annotations;
 using Robust.Client.Audio;
-using Robust.Client.GameObjects;
+using Robust.Shared.Animations;
 using Robust.Shared.Audio;
 using Robust.Shared.GameObjects;
 using Robust.Shared.IoC;
@@ -12,7 +13,8 @@ namespace Robust.Client.Animations
     /// <summary>
     ///     An animation track that plays a sound as keyframes.
     /// </summary>
-    public sealed class AnimationTrackPlaySound : AnimationTrack
+    [UsedImplicitly]
+    public sealed partial class AnimationTrackPlaySound : AnimationTrack
     {
         /// <summary>
         ///     A list of key frames for when to fire flicks.

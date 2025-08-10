@@ -1,9 +1,14 @@
 using System;
 using System.Collections.Generic;
+using JetBrains.Annotations;
 using Robust.Client.GameObjects;
 using Robust.Client.Graphics;
+using Robust.Shared.Animations;
 using Robust.Shared.GameObjects;
 using Robust.Shared.IoC;
+using Robust.Shared.Network;
+using Robust.Shared.Serialization;
+using Robust.Shared.Serialization.Manager.Attributes;
 using Robust.Shared.Utility;
 
 namespace Robust.Client.Animations
@@ -11,17 +16,20 @@ namespace Robust.Client.Animations
     /// <summary>
     ///     An animation track that plays RSI state animations manually, so they can be precisely controlled etc.
     /// </summary>
-    public sealed class AnimationTrackSpriteFlick : AnimationTrack
+    [UsedImplicitly, SerializedType(nameof(AnimationTrackSpriteFlick))]
+    public sealed partial class AnimationTrackSpriteFlick : AnimationTrack
     {
         /// <summary>
         ///     A list of key frames for when to fire flicks.
         /// </summary>
+        [DataField(networkSide: NetworkSide.Client)]
         public List<KeyFrame> KeyFrames { get; private set; } = new();
 
         // TODO: Should this layer key be per keyframe maybe?
         /// <summary>
         ///     The layer key of the layer to flick on.
         /// </summary>
+        [DataField(networkSide: NetworkSide.Client)]
         public object? LayerKey { get; set; }
 
         public override (int KeyFrameIndex, float FramePlayingTime) InitPlayback()
@@ -70,17 +78,20 @@ namespace Robust.Client.Animations
             return (keyFrameIndex, playingTime);
         }
 
-        public struct KeyFrame
+        [DataDefinition]
+        public partial struct KeyFrame
         {
             /// <summary>
             ///     The RSI state to play when this keyframe gets triggered.
             /// </summary>
-            public readonly RSI.StateId State;
+            [DataField(networkSide: NetworkSide.Client)]
+            public RSI.StateId State;
 
             /// <summary>
             ///     The time between this keyframe and the last.
             /// </summary>
-            public readonly float KeyTime;
+            [DataField(networkSide: NetworkSide.Client)]
+            public float KeyTime;
 
             public KeyFrame(RSI.StateId state, float keyTime)
             {

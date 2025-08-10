@@ -1,9 +1,11 @@
 using System;
+using JetBrains.Annotations;
 using Robust.Shared.Animations;
 
 namespace Robust.Client.Animations
 {
-    public sealed class AnimationTrackControlProperty : AnimationTrackProperty
+    [UsedImplicitly]
+    public sealed partial class AnimationTrackControlProperty : AnimationTrackProperty
     {
         public string? Property { get; set; }
 
