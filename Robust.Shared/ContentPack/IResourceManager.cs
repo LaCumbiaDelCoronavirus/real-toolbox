@@ -142,6 +142,12 @@ namespace Robust.Shared.ContentPack
         IEnumerable<ResPath> GetContentRoots();
 
         /// <summary>
+        ///     Returns a <see cref="DirProvider"/> rooted in the executable directory. 
+        /// </summary>
+        /// <exception cref="DirectoryNotFoundException">Thrown if the executable directory could not be found.</exception>
+        DirProvider GetContentDirProvider();
+
+        /// <summary>
         ///     Read a file from the mounted content paths to a string.
         /// </summary>
         /// <param name="path">Path of the file to read.</param>

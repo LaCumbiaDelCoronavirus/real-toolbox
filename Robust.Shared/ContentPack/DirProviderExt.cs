@@ -7,7 +7,7 @@ using Robust.Shared.Utility;
 namespace Robust.Shared.ContentPack
 {
     [PublicAPI]
-    public static class WritableDirProviderExt
+    public static class DirProviderExt
     {
         /// <summary>
         ///     Opens a file for reading.
@@ -18,7 +18,7 @@ namespace Robust.Shared.ContentPack
         /// <exception cref="FileNotFoundException">
         ///     Thrown if the file does not exist.
         /// </exception>
-        public static Stream OpenRead(this IWritableDirProvider provider, ResPath path)
+        public static Stream OpenRead(this IDirProvider provider, ResPath path)
         {
             return provider.Open(path, FileMode.Open, FileAccess.Read, FileShare.Read);
         }
@@ -32,12 +32,64 @@ namespace Robust.Shared.ContentPack
         /// <exception cref="FileNotFoundException">
         ///     Thrown if the file does not exist.
         /// </exception>
-        public static StreamReader OpenText(this IWritableDirProvider provider, ResPath path)
+        public static StreamReader OpenText(this IDirProvider provider, ResPath path)
         {
             var stream = OpenRead(provider, path);
             return new StreamReader(stream, EncodingHelpers.UTF8);
         }
 
+        /// <summary>
+        /// Reads the entire contents of a file to a string.
+        /// </summary>
+        /// <param name="provider"></param>
+        /// <param name="path">File to read.</param>
+        /// <returns>String of the file contents</returns>
+        public static string ReadAllText(this IDirProvider provider, ResPath path)
+        {
+            using var reader = provider.OpenText(path);
+
+            return reader.ReadToEnd();
+        }
+
+        /// <summary>
+        /// Reads the entire contents of a path to a string.
+        /// </summary>
+        /// <param name="provider">The writable directory to look for the path in.</param>
+        /// <param name="path">The path to read the contents from.</param>
+        /// <param name="text">The content read from the path, or null if the path did not exist.</param>
+        /// <returns>true if path was successfully read; otherwise, false.</returns>
+        public static bool TryReadAllText(this IDirProvider provider, ResPath path, [NotNullWhen(true)] out string? text)
+        {
+            try
+            {
+                text = ReadAllText(provider, path);
+                return true;
+            }
+            catch (FileNotFoundException)
+            {
+                text = null;
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Reads the entire contents of a path to a byte array.
+        /// </summary>
+        /// <param name="provider">The writable directory to look for the path in.</param>
+        /// <param name="path">The path to read the contents from.</param>
+        /// <returns>The contents of the path as a byte array.</returns>
+        public static byte[] ReadAllBytes(this IDirProvider provider, ResPath path)
+        {
+            using var stream = provider.OpenRead(path);
+            using var memoryStream = new MemoryStream((int)stream.Length);
+            stream.CopyTo(memoryStream);
+            return memoryStream.ToArray();
+        }
+    }
+
+    [PublicAPI]
+    public static class WritableDirProviderExt
+    {
         /// <summary>
         ///     Opens a file for writing. If the file already exists, it will be overwritten.
         /// </summary>
@@ -74,54 +126,6 @@ namespace Robust.Shared.ContentPack
             using var writer = new StreamWriter(stream, EncodingHelpers.UTF8);
 
             writer.Write(content);
-        }
-
-        /// <summary>
-        /// Reads the entire contents of a file to a string.
-        /// </summary>
-        /// <param name="provider"></param>
-        /// <param name="path">File to read.</param>
-        /// <returns>String of the file contents</returns>
-        public static string ReadAllText(this IWritableDirProvider provider, ResPath path)
-        {
-            using var reader = provider.OpenText(path);
-
-            return reader.ReadToEnd();
-        }
-
-        /// <summary>
-        /// Reads the entire contents of a path to a string.
-        /// </summary>
-        /// <param name="provider">The writable directory to look for the path in.</param>
-        /// <param name="path">The path to read the contents from.</param>
-        /// <param name="text">The content read from the path, or null if the path did not exist.</param>
-        /// <returns>true if path was successfully read; otherwise, false.</returns>
-        public static bool TryReadAllText(this IWritableDirProvider provider, ResPath path, [NotNullWhen(true)] out string? text)
-        {
-            try
-            {
-                text = ReadAllText(provider, path);
-                return true;
-            }
-            catch(FileNotFoundException)
-            {
-                text = null;
-                return false;
-            }
-        }
-
-        /// <summary>
-        /// Reads the entire contents of a path to a byte array.
-        /// </summary>
-        /// <param name="provider">The writable directory to look for the path in.</param>
-        /// <param name="path">The path to read the contents from.</param>
-        /// <returns>The contents of the path as a byte array.</returns>
-        public static byte[] ReadAllBytes(this IWritableDirProvider provider, ResPath path)
-        {
-            using var stream = provider.OpenRead(path);
-            using var memoryStream = new MemoryStream((int) stream.Length);
-            stream.CopyTo(memoryStream);
-            return memoryStream.ToArray();
         }
 
         /// <summary>

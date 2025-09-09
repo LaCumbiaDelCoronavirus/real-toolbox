@@ -2,49 +2,28 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Threading;
 using Robust.Shared.Utility;
 
 namespace Robust.Shared.ContentPack
 {
-    /// <inheritdoc />
-    internal sealed class WritableDirProvider : IWritableDirProvider
+    /// <inheritdoc cref="IDirProvider" />
+    [Virtual]
+    public class DirProvider : IDirProvider
     {
         /// <inheritdoc />
         public string RootDir { get; }
 
         /// <summary>
-        /// Constructs an instance of <see cref="WritableDirProvider"/>.
+        /// Constructs an instance of <see cref="DirProvider"/> from a system <see cref="DirectoryInfo"/>. 
         /// </summary>
         /// <param name="rootDir">Root file system directory to allow writing.</param>
-        public WritableDirProvider(DirectoryInfo rootDir)
+        public DirProvider(DirectoryInfo rootDir)
         {
             // FullName does not have a trailing separator, and we MUST have a separator.
             RootDir = rootDir.FullName + Path.DirectorySeparatorChar.ToString();
         }
 
         #region File Access
-
-        /// <inheritdoc />
-        public void CreateDir(ResPath path)
-        {
-            var fullPath = GetFullPath(path);
-            Directory.CreateDirectory(fullPath);
-        }
-
-        /// <inheritdoc />
-        public void Delete(ResPath path)
-        {
-            var fullPath = GetFullPath(path);
-            if (Directory.Exists(fullPath))
-            {
-                Directory.Delete(fullPath, true);
-            }
-            else if (File.Exists(fullPath))
-            {
-                File.Delete(fullPath);
-            }
-        }
 
         /// <inheritdoc />
         public bool Exists(ResPath path)
@@ -122,14 +101,6 @@ namespace Robust.Shared.ContentPack
             return new WritableDirProvider(dirInfo);
         }
 
-        /// <inheritdoc />
-        public void Rename(ResPath oldPath, ResPath newPath)
-        {
-            var fullOldPath = GetFullPath(oldPath);
-            var fullNewPath = GetFullPath(newPath);
-            File.Move(fullOldPath, fullNewPath);
-        }
-
         public void OpenOsWindow(ResPath path)
         {
             if (!IsDir(path))
@@ -194,6 +165,45 @@ namespace Robust.Shared.ContentPack
             }
 
             return Path.GetFullPath(Path.Combine(root, relPath));
+        }
+    }
+
+    /// <inheritdoc cref="IWritableDirProvider" />
+    internal sealed class WritableDirProvider : DirProvider, IWritableDirProvider
+    {
+        /// <summary>
+        /// Constructs an instance of <see cref="WritableDirProvider"/>.
+        /// </summary>
+        /// <inheritdoc />
+        public WritableDirProvider(DirectoryInfo rootDir) : base(rootDir) { }
+
+        /// <inheritdoc />
+        public void CreateDir(ResPath path)
+        {
+            var fullPath = GetFullPath(path);
+            Directory.CreateDirectory(fullPath);
+        }
+
+        /// <inheritdoc />
+        public void Delete(ResPath path)
+        {
+            var fullPath = GetFullPath(path);
+            if (Directory.Exists(fullPath))
+            {
+                Directory.Delete(fullPath, true);
+            }
+            else if (File.Exists(fullPath))
+            {
+                File.Delete(fullPath);
+            }
+        }
+
+        /// <inheritdoc />
+        public void Rename(ResPath oldPath, ResPath newPath)
+        {
+            var fullOldPath = GetFullPath(oldPath);
+            var fullNewPath = GetFullPath(newPath);
+            File.Move(fullOldPath, fullNewPath);
         }
     }
 }

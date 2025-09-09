@@ -384,6 +384,15 @@ namespace Robust.Shared.ContentPack
             }
         }
 
+        public DirProvider GetContentDirProvider()
+        {
+            var executableDirectoryInfo = new DirectoryInfo(PathHelpers.GetExecutableDirectory());
+            if (!executableDirectoryInfo.Exists)
+                throw new DirectoryNotFoundException($"Executable directory somehow does not exist. Given directory: {executableDirectoryInfo}");
+
+            return new DirProvider(executableDirectoryInfo);
+        }
+
         internal static bool IsPathValid(ResPath path)
         {
             var asString = path.ToString();
