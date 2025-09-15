@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Runtime.InteropServices;
 using Robust.Shared.Utility;
@@ -27,6 +28,41 @@ namespace Robust.Shared.ContentPack
                 throw new InvalidOperationException("Cannot find path of executable.");
             }
             return Path.GetDirectoryName(location)!;
+        }
+
+        /// <summary>
+        ///     Try-pattern version of <see cref="AbsoluteFileToRelative(string)"/>.
+        /// </summary>
+        /// <returns></returns>
+        public static bool TryAbsoluteFileToRelative(string fullPath, [NotNullWhen(true)] out string? relativePath)
+        {
+            var executablePath = GetExecutableDirectory();
+            if (!fullPath.StartsWith(executablePath))
+            {
+                relativePath = null;
+                return false;
+            }
+
+            // remove the executable path from the fullpath
+            relativePath = fullPath[executablePath.Length..];
+            return true;
+        }
+
+        /// <summary>
+        ///     Turns a fully qualified path into a path relative to the executable directory.
+        ///     Throws an exception if the path provided is not relative to the executable directory.
+        /// </summary>
+        /// <remarks>
+        ///     <paramref name="fullPath"/> must be separated by the system's directory separator character.
+        /// </remarks>
+        /// <returns>A path relative to the executable directory.</returns>
+        /// <exception cref="InvalidOperationException"/>
+        public static string AbsoluteFileToRelative(string fullPath)
+        {
+            if (!TryAbsoluteFileToRelative(fullPath, out var relativePath))
+                throw new ArgumentException("Path provided isn't in the executable's directory!");
+
+            return relativePath;
         }
 
         /// <summary>
