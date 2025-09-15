@@ -12,10 +12,10 @@ namespace Robust.Shared.ContentPack;
 public interface IDirProvider
 {
     /// <summary>
-    /// The root path of this provider in the system.
-    /// Can be null if it's a virtual provider.
+    /// The root path of this provider.
+    /// Can be null if it's a virtual provider or the path is protected (e.g. on the client).
     /// </summary>
-    public string? RootDir { get; }
+    string? RootDir { get; }
 
     /// <summary>
     /// Tests if a file or directory exists.
