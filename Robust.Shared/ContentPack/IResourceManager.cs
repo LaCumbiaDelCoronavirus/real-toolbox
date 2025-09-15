@@ -136,9 +136,8 @@ namespace Robust.Shared.ContentPack
         IEnumerable<string> ContentGetDirectoryEntries(ResPath path);
 
         /// <summary>
-        ///     Returns a list of paths to all top-level content directories
+        ///     Returns a list of paths to all top-level content directories, relative to the executable's directory.
         /// </summary>
-        /// <returns></returns>
         IEnumerable<ResPath> GetContentRoots();
 
         /// <summary>

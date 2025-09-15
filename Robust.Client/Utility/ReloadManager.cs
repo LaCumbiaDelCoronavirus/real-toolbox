@@ -83,7 +83,7 @@ internal sealed class ReloadManager : IReloadManager
 #if TOOLS
         foreach (var root in _res.GetContentRoots())
         {
-            var path = root + directory;
+            var path = PathHelpers.GetExecutableDirectory() + root + directory;
 
             if (!Directory.Exists(path))
             {

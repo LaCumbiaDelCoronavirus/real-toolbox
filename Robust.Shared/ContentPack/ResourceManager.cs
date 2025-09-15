@@ -377,13 +377,11 @@ namespace Robust.Shared.ContentPack
             {
                 if (root is DirLoader loader)
                 {
-                    var rootDir = loader.GetPath(new ResPath(@"/"));
+                    // Instead of OS paths, we use paths relative to the executable directory.
+                    var relativeLoaderDirectory = PathHelpers.AbsoluteFileToRelative(loader.GetPath(new ResPath(@"/")));
 
-                    // TODO: GET RID OF THIS.
-                    // This code shouldn't be passing OS disk paths through ResPath.
-                    rootDir = rootDir.Replace(Path.DirectorySeparatorChar, '/');
-
-                    yield return new ResPath(rootDir);
+                    relativeLoaderDirectory = relativeLoaderDirectory.Replace(Path.DirectorySeparatorChar, '/');
+                    yield return new ResPath(relativeLoaderDirectory);
                 }
             }
         }
