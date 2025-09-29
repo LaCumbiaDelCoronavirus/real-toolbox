@@ -371,18 +371,19 @@ namespace Robust.Shared.ContentPack
             AddRoot(ResPath.Root, loader);
         }
 
-        public IEnumerable<ResPath> GetContentRoots()
+        IEnumerable<ResPath> IResourceManager.GetContentRoots()
+        {
+            return [];
+        }
+
+        public IEnumerable<string> GetContentRoots()
         {
             foreach (var (_, root) in _contentRoots)
             {
-                if (root is DirLoader loader)
-                {
-                    // Instead of OS paths, we use paths relative to the executable directory.
-                    var relativeLoaderDirectory = PathHelpers.AbsoluteFileToRelative(loader.GetPath(new ResPath(@"/")));
+                if (root is not DirLoader loader)
+                    continue;
 
-                    relativeLoaderDirectory = relativeLoaderDirectory.Replace(Path.DirectorySeparatorChar, '/');
-                    yield return new ResPath(relativeLoaderDirectory);
-                }
+                yield return loader.GetPath(ResPath.Root);
             }
         }
 

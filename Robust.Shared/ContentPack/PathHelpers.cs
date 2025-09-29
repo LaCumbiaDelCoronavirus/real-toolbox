@@ -104,7 +104,11 @@ namespace Robust.Shared.ContentPack
         internal static string SafeGetResourcePath(string baseDir, ResPath path)
         {
             var relSysPath = path.ToRelativeSystemPath();
-            if (relSysPath.Contains("\\..") || relSysPath.Contains("/.."))
+
+            // This also blocks files like "..foo.yml". But whatever, I CBF fixing that.
+            if (relSysPath.Contains("\\..")
+                || relSysPath.Contains("/..")
+                || relSysPath.StartsWith(".."))
             {
                 // Hard cap on any exploit smuggling a .. in there.
                 // Since that could allow leaving sandbox.
@@ -116,7 +120,7 @@ namespace Robust.Shared.ContentPack
             if (!retPath.StartsWith(baseDir))
             {
                 // Allow path to match if it's just missing the directory separator at the end.
-                if (retPath != baseDir.TrimEnd('\\'))
+                if (retPath != baseDir.TrimEnd(Path.DirectorySeparatorChar))
                     throw new InvalidOperationException($"This branch should never be reached. Path: {path}");
             }
 
