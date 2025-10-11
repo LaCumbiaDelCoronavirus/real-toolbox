@@ -4,7 +4,7 @@ using Robust.Shared.Utility;
 namespace Robust.Shared.ContentPack
 {
     /// <summary>
-    /// Provides an API for reading and manipulation of files and directories, inside of a rooted folder.
+    /// Provides an API for reading and manipulating of files and directories, inside of a rooted folder.
     /// </summary>
     [PublicAPI]
     public interface IWritableDirProvider : IDirProvider
